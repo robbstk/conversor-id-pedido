@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor VTEX to Microvix | Linx Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4);
+        }
+    </style>
+</head>
+<body class="text-slate-200 flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <header class="mb-10 text-center">
+        <div class="flex items-center justify-center mb-4">
+            <div class="p-3 bg-white/10 rounded-2xl">
+                <i data-lucide="refresh-cw" class="w-8 h-8 text-purple-400"></i>
+            </div>
+        </div>
+        <h1 class="text-4xl font-bold mb-2 tracking-tight">Conversor <span class="gradient-text">Microvix</span></h1>
+        <p class="text-slate-400">Transforme IDs VTEX em IDs de faturamento Microvix</p>
+    </header>
+
+    <!-- Main Card -->
+    <main class="w-full max-w-lg">
+        <div class="glass-card rounded-3xl p-8 shadow-2xl">
+            
+            <!-- Input Section -->
+            <div class="mb-6">
+                <label for="vtexId" class="block text-sm font-medium text-slate-400 mb-2 ml-1">ID do Pedido VTEX</label>
+                <input type="text" id="vtexId" 
+                    placeholder="Ex: SLR-1586632362524-02" 
+                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-4 text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                >
+            </div>
+
+            <!-- Action Button -->
+            <button onclick="convertId()" class="btn-primary w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 mb-8">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                Converter Agora
+            </button>
+
+            <!-- Result Section -->
+            <div id="resultArea" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="bg-slate-900/80 rounded-2xl p-6 border border-purple-500/30">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-purple-400 block mb-2">ID Microvix Gerado</span>
+                    <div class="flex items-center justify-between gap-4">
+                        <div id="resultValue" class="text-3xl font-mono font-bold text-white break-all">0232362524</div>
+                        <button onclick="copyToClipboard()" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors group" title="Copiar">
+                            <i data-lucide="copy" id="copyIcon" class="w-6 h-6 text-slate-300 group-active:scale-90 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-center text-xs text-slate-500 mt-4 italic">
+                    Regra: Sufixo (2 dígitos) + 8 últimas posições da base.
+                </p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden text-red-400 text-sm text-center mt-4 bg-red-400/10 py-2 rounded-lg border border-red-400/20">
+                Formato de ID inválido. Tente algo como: SLR-1586632362524-02
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-slate-500 text-sm">
+        Desenvolvido para agilidade operacional • <span class="text-slate-400">v1.0</span>
+    </footer>
+
+    <script>
+        // Inicializa os ícones Lucide
+        lucide.createIcons();
+
+        const inputVtex = document.getElementById('vtexId');
+        const resultArea = document.getElementById('resultArea');
+        const resultValue = document.getElementById('resultValue');
+        const errorMessage = document.getElementById('errorMessage');
+        const copyIcon = document.getElementById('copyIcon');
+
+        function convertId() {
+            const rawValue = inputVtex.value.trim();
+            
+            // Regex simples para validar se existe pelo menos um hífen e números
+            if (!rawValue.includes('-')) {
+                showError();
+                return;
+            }
+
+            try {
+                const parts = rawValue.split('-');
+                
+                // Pega o sufixo (ex: 02)
+                const suffix = parts[parts.length - 1]; 
+                
+                // Pega a parte numérica principal (a penúltima parte antes do sufixo)
+                const mainPart = parts[parts.length - 2];
+                
+                if (!suffix || !mainPart || mainPart.length < 8) {
+                    showError();
+                    return;
+                }
+
+                // Pega os últimos 8 dígitos da parte principal
+                const base8 = mainPart.slice(-8);
+                
+                // Resultado final
+                const microvixId = suffix + base8;
+
+                showResult(microvixId);
+            } catch (err) {
+                showError();
+            }
+        }
+
+        function showResult(value) {
+            errorMessage.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            resultValue.innerText = value;
+            
+            // Reset do ícone de cópia caso tenha sido clicado antes
+            copyIcon.setAttribute('data-lucide', 'copy');
+            lucide.createIcons();
+        }
+
+        function showError() {
+            resultArea.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+        }
+
+        async function copyToClipboard() {
+            const text = resultValue.innerText;
+            try {
+                await navigator.clipboard.writeText(text);
+                
+                // Feedback visual de cópia
+                copyIcon.setAttribute('data-lucide', 'check');
+                copyIcon.classList.remove('text-slate-300');
+                copyIcon.classList.add('text-green-400');
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    copyIcon.setAttribute('data-lucide', 'copy');
+                    copyIcon.classList.remove('text-green-400');
+                    copyIcon.classList.add('text-slate-300');
+                    lucide.createIcons();
+                }, 2000);
+
+            } catch (err) {
+                alert('Erro ao copiar!');
+            }
+        }
+
+        // Permitir converter ao apertar Enter
+        inputVtex.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') convertId();
+        });
+    </script>
+</body>
+</html>
